@@ -332,3 +332,109 @@ h3 { margin-bottom: 8px; }
   .breakdown { overflow-x: auto; }
   .breakdown-table { min-width: 560px; }
 }
+
+.player-toggle,
+.section-toggle {
+  width: 100%;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.player-toggle:active,
+.section-toggle:active { transform: none; }
+
+.player-name-title,
+.section-title {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 1000;
+}
+
+.tap-hint {
+  display: block;
+  margin-top: 3px;
+  color: var(--blue-dark);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.player-card:not(.collapsed) .tap-hint::after { content: " — open"; }
+
+.player-options {
+  display: grid;
+  gap: 10px;
+}
+
+.score-section {
+  margin: 0 14px 14px;
+  border: 2px solid #bdefff;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #e7f8ff;
+}
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 66px;
+  padding: 12px 14px;
+  background: #d2f5ff;
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: white;
+  color: var(--blue-dark);
+  font-weight: 1000;
+  transition: transform 0.12s ease;
+}
+
+.score-section:not(.collapsed) .chevron { transform: rotate(180deg); }
+
+.score-section .counter-grid {
+  padding: 10px;
+  background: #f2fbff;
+}
+
+.one-col { grid-template-columns: 1fr; }
+
+.choice-row {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.choice-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choice-btn {
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: white;
+  color: var(--red-dark);
+  font-weight: 1000;
+  box-shadow: inset 0 -4px rgba(239, 75, 79, 0.12);
+  cursor: pointer;
+}
+
+.choice-btn.selected {
+  background: var(--red);
+  color: white;
+  box-shadow: inset 0 -4px rgba(0,0,0,0.14);
+}
+
+@media (max-width: 430px) {
+  .choice-controls { grid-template-columns: repeat(5, 1fr); }
+  .choice-btn { min-height: 50px; }
+}

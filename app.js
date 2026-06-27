@@ -2,21 +2,23 @@ const MAX_PLAYERS = 5;
 const MIN_PLAYERS = 2;
 const TOTAL_ROUNDS = 3;
 
-const cardFields = [
-  { key: "maki1", label: "1 Maki Roll", help: "1 icon each" },
-  { key: "maki2", label: "2 Maki Rolls", help: "2 icons each" },
-  { key: "maki3", label: "3 Maki Rolls", help: "3 icons each" },
-  { key: "tempura", label: "Tempura", help: "2 cards = 5" },
-  { key: "sashimi", label: "Sashimi", help: "3 cards = 10" },
-  { key: "dumpling", label: "Dumplings", help: "1/3/6/10/15" },
-  { key: "squid", label: "Squid Nigiri", help: "3 points" },
-  { key: "salmon", label: "Salmon Nigiri", help: "2 points" },
-  { key: "egg", label: "Egg Nigiri", help: "1 point" },
-  { key: "squidWasabi", label: "Squid on Wasabi", help: "9 points" },
-  { key: "salmonWasabi", label: "Salmon on Wasabi", help: "6 points" },
-  { key: "eggWasabi", label: "Egg on Wasabi", help: "3 points" },
-  { key: "chopsticks", label: "Chopsticks", help: "0 points" }
+const scoringFields = [
+  { type: "choice", key: "makiBonus", label: "Maki Bonus", help: "Choose the maki points you earned.", options: [6, 3, 2, 1, 0] },
+  { type: "counter", key: "tempuraSets", label: "Completed Tempura Duos", help: "Each duo = 5 points" },
+  { type: "counter", key: "sashimiSets", label: "Completed Sashimi Trios", help: "Each trio = 10 points" },
+  { type: "counter", key: "dumpling", label: "Dumplings", help: "1/3/6/10/15" }
 ];
+
+const nigiriFields = [
+  { key: "egg", label: "Egg Nigiri", help: "1 point" },
+  { key: "eggWasabi", label: "Egg with Wasabi", help: "3 points" },
+  { key: "salmon", label: "Salmon Nigiri", help: "2 points" },
+  { key: "salmonWasabi", label: "Salmon with Wasabi", help: "6 points" },
+  { key: "squid", label: "Squid Nigiri", help: "3 points" },
+  { key: "squidWasabi", label: "Squid with Wasabi", help: "9 points" }
+];
+
+const roundFieldKeys = [...scoringFields.map(field => field.key), ...nigiriFields.map(field => field.key)];
 
 const state = {
   players: [],
@@ -43,7 +45,7 @@ function showScreen(name) {
 }
 
 function blankRoundCards() {
-  return Object.fromEntries(cardFields.map(field => [field.key, 0]));
+  return Object.fromEntries(roundFieldKeys.map(key => [key, 0]));
 }
 
 function addPlayer(name = "") {
@@ -106,19 +108,71 @@ function renderRound() {
 
   state.players.forEach(player => {
     const card = document.createElement("article");
-    card.className = "player-card";
+    card.className = "player-card collapsed";
     card.dataset.playerId = player.id;
     card.innerHTML = `
-      <div class="player-card-header">
-        <h3>${escapeHtml(player.name)}</h3>
-        <div class="player-score-chip">${player.total} pts</div>
+      <button class="player-card-header player-toggle" type="button" aria-expanded="false">
+        <span>
+          <span class="player-name-title">${escapeHtml(player.name)}</span>
+          <span class="tap-hint">Tap to enter score</span>
+        </span>
+        <span class="player-score-chip">${player.total} pts</span>
+      </button>
+      <div class="player-options" hidden>
+        <div class="counter-grid"></div>
+        <section class="score-section collapsed" data-section="nigiri">
+          <button class="section-toggle" type="button" aria-expanded="false">
+            <span>
+              <span class="section-title">Nigiri</span>
+              <span class="counter-help">Tap to show Egg, Salmon, Squid, and Wasabi options</span>
+            </span>
+            <span class="chevron">⌄</span>
+          </button>
+          <div class="section-content counter-grid" hidden></div>
+        </section>
       </div>
-      <div class="counter-grid"></div>
     `;
-    const grid = card.querySelector(".counter-grid");
-    cardFields.forEach(field => grid.appendChild(createCounter(field.label, field.help, field.key)));
+
+    const toggle = card.querySelector(".player-toggle");
+    toggle.addEventListener("click", () => togglePlayerCard(card));
+
+    const grid = card.querySelector(".player-options > .counter-grid");
+    scoringFields.forEach(field => {
+      grid.appendChild(field.type === "choice"
+        ? createChoiceGroup(field.label, field.help, field.key, field.options)
+        : createCounter(field.label, field.help, field.key)
+      );
+    });
+
+    const nigiriSection = card.querySelector(".score-section");
+    const sectionToggle = nigiriSection.querySelector(".section-toggle");
+    const sectionContent = nigiriSection.querySelector(".section-content");
+    nigiriFields.forEach(field => sectionContent.appendChild(createCounter(field.label, field.help, field.key)));
+    sectionToggle.addEventListener("click", () => toggleSection(nigiriSection));
+
     wrapper.appendChild(card);
   });
+}
+
+function togglePlayerCard(card) {
+  const willOpen = card.classList.contains("collapsed");
+  $$("#round-forms .player-card").forEach(otherCard => setPlayerCardOpen(otherCard, false));
+  if (willOpen) setPlayerCardOpen(card, true);
+}
+
+function setPlayerCardOpen(card, open) {
+  card.classList.toggle("collapsed", !open);
+  card.querySelector(".player-toggle").setAttribute("aria-expanded", String(open));
+  card.querySelector(".player-options").hidden = !open;
+}
+
+function toggleSection(section) {
+  const content = section.querySelector(".section-content");
+  const toggle = section.querySelector(".section-toggle");
+  const open = section.classList.contains("collapsed");
+  section.classList.toggle("collapsed", !open);
+  content.hidden = !open;
+  toggle.setAttribute("aria-expanded", String(open));
 }
 
 function createCounter(label, help, key, value = 0) {
@@ -141,6 +195,35 @@ function createCounter(label, help, key, value = 0) {
   return template;
 }
 
+function createChoiceGroup(label, help, key, options) {
+  const row = document.createElement("div");
+  row.className = "counter-row choice-row";
+  row.dataset.key = key;
+  row.dataset.value = "0";
+  row.innerHTML = `
+    <div>
+      <label class="counter-label">${escapeHtml(label)}</label>
+      <p class="counter-help">${escapeHtml(help)}</p>
+    </div>
+    <div class="choice-controls" role="group" aria-label="${escapeHtml(label)}">
+      ${options.map(option => `<button class="choice-btn${option === 0 ? " selected" : ""}" type="button" data-value="${option}" aria-pressed="${option === 0}">${option}</button>`).join("")}
+    </div>
+  `;
+
+  row.querySelectorAll(".choice-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      row.dataset.value = button.dataset.value;
+      row.querySelectorAll(".choice-btn").forEach(choice => {
+        const selected = choice === button;
+        choice.classList.toggle("selected", selected);
+        choice.setAttribute("aria-pressed", String(selected));
+      });
+    });
+  });
+
+  return row;
+}
+
 function setCounterValue(output, value) {
   output.textContent = Math.max(0, value);
 }
@@ -150,7 +233,11 @@ function collectRoundInput() {
   $$("#round-forms .player-card").forEach(card => {
     const cards = blankRoundCards();
     card.querySelectorAll(".counter-row").forEach(row => {
-      cards[row.dataset.key] = Number(row.querySelector(".counter-value").textContent);
+      if (row.classList.contains("choice-row")) {
+        cards[row.dataset.key] = Number(row.dataset.value);
+      } else {
+        cards[row.dataset.key] = Number(row.querySelector(".counter-value").textContent);
+      }
     });
     inputsByPlayer.set(card.dataset.playerId, cards);
   });
@@ -161,26 +248,27 @@ function scoreRound() {
   const inputs = collectRoundInput();
   const details = state.players.map(player => {
     const cards = inputs.get(player.id);
-    const baseScore = scoreNonMakiCards(cards);
-    const makiIcons = cards.maki1 + cards.maki2 * 2 + cards.maki3 * 3;
+    const tempura = cards.tempuraSets * 5;
+    const sashimi = cards.sashimiSets * 10;
+    const dumpling = scoreDumplings(cards.dumpling);
+    const nigiri = scoreNigiri(cards);
+    const maki = cards.makiBonus;
+    const roundTotal = tempura + sashimi + dumpling + nigiri + maki;
+
     return {
       playerId: player.id,
       name: player.name,
       cards,
-      makiIcons,
-      tempura: Math.floor(cards.tempura / 2) * 5,
-      sashimi: Math.floor(cards.sashimi / 3) * 10,
-      dumpling: scoreDumplings(cards.dumpling),
-      nigiri: scoreNigiri(cards),
-      maki: 0,
-      roundTotal: baseScore
+      tempura,
+      sashimi,
+      dumpling,
+      nigiri,
+      maki,
+      roundTotal
     };
   });
 
-  applyMakiScoring(details);
-
   details.forEach(detail => {
-    detail.roundTotal += detail.maki;
     const player = state.players.find(p => p.id === detail.playerId);
     player.total += detail.roundTotal;
     player.roundScores.push(detail.roundTotal);
@@ -189,13 +277,6 @@ function scoreRound() {
   state.lastRoundResult = { round: state.currentRound, details };
   renderStandings();
   showScreen("standings");
-}
-
-function scoreNonMakiCards(cards) {
-  return Math.floor(cards.tempura / 2) * 5 +
-    Math.floor(cards.sashimi / 3) * 10 +
-    scoreDumplings(cards.dumpling) +
-    scoreNigiri(cards);
 }
 
 function scoreDumplings(count) {
@@ -208,25 +289,9 @@ function scoreDumplings(count) {
 }
 
 function scoreNigiri(cards) {
-  return cards.squid * 3 + cards.salmon * 2 + cards.egg +
-    cards.squidWasabi * 9 + cards.salmonWasabi * 6 + cards.eggWasabi * 3;
-}
-
-function applyMakiScoring(details) {
-  const positiveScores = [...new Set(details.map(d => d.makiIcons).filter(score => score > 0))].sort((a, b) => b - a);
-  if (positiveScores.length === 0) return;
-
-  const firstScore = positiveScores[0];
-  const firstGroup = details.filter(d => d.makiIcons === firstScore);
-  const firstPoints = Math.floor(6 / firstGroup.length);
-  firstGroup.forEach(d => d.maki += firstPoints);
-
-  if (firstGroup.length > 1 || positiveScores.length < 2) return;
-
-  const secondScore = positiveScores[1];
-  const secondGroup = details.filter(d => d.makiIcons === secondScore);
-  const secondPoints = Math.floor(3 / secondGroup.length);
-  secondGroup.forEach(d => d.maki += secondPoints);
+  return cards.egg + cards.eggWasabi * 3 +
+    cards.salmon * 2 + cards.salmonWasabi * 6 +
+    cards.squid * 3 + cards.squidWasabi * 9;
 }
 
 function renderStandings() {
@@ -264,7 +329,6 @@ function renderRoundBreakdown() {
   const rows = state.lastRoundResult.details.map(d => `
     <tr>
       <td>${escapeHtml(d.name)}</td>
-      <td>${d.makiIcons}</td>
       <td>${d.maki}</td>
       <td>${d.tempura}</td>
       <td>${d.sashimi}</td>
@@ -279,7 +343,7 @@ function renderRoundBreakdown() {
     <table class="breakdown-table">
       <thead>
         <tr>
-          <th>Player</th><th>Maki Icons</th><th>Maki Pts</th><th>Tempura</th><th>Sashimi</th><th>Dumplings</th><th>Nigiri</th><th>Total</th>
+          <th>Player</th><th>Maki Bonus</th><th>Tempura</th><th>Sashimi</th><th>Dumplings</th><th>Nigiri</th><th>Total</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
