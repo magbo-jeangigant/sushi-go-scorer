@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sushi Go! Score Bento</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Scoring Companion</p>
+        <h1>Sushi Go! Score Bento</h1>
+        <p class="subtitle">Track 3 rounds, score maki ties, count pudding, and crown the sushi champion.</p>
+      </div>
+      <div class="mascot" aria-hidden="true">🍣</div>
+    </header>
+
+    <main>
+      <section id="setup-screen" class="screen active card setup-card">
+        <h2>Set up players</h2>
+        <p>Add 2 to 5 players, then start Round 1.</p>
+
+        <div id="player-list" class="player-list"></div>
+
+        <div class="setup-actions">
+          <button id="add-player" class="button secondary" type="button">+ Add Player</button>
+          <button id="start-game" class="button primary" type="button">Start Game</button>
+        </div>
+        <p id="setup-error" class="error" role="alert"></p>
+      </section>
+
+      <section id="round-screen" class="screen">
+        <div class="toolbar card compact-card">
+          <div>
+            <p class="eyebrow">Round <span id="round-number">1</span> of 3</p>
+            <h2>Enter collected cards</h2>
+          </div>
+          <button id="reset-game" class="button ghost" type="button">New Game</button>
+        </div>
+
+        <div id="round-forms" class="round-forms"></div>
+
+        <div class="card scoring-note">
+          <h3>Wasabi tip</h3>
+          <p>Enter nigiri normally, then use the “on Wasabi” counters for nigiri that were placed on wasabi. Unused wasabi scores 0.</p>
+        </div>
+
+        <button id="score-round" class="button primary full-width" type="button">Score Round</button>
+      </section>
+
+      <section id="standings-screen" class="screen">
+        <div class="card compact-card standings-header">
+          <div>
+            <p class="eyebrow">Standings</p>
+            <h2 id="standings-title">After Round 1</h2>
+          </div>
+          <div id="round-total-pill" class="round-pill">Round scored</div>
+        </div>
+
+        <div id="standings-list" class="standings-list"></div>
+        <div id="round-breakdown" class="breakdown card"></div>
+
+        <button id="next-step" class="button primary full-width" type="button">Next Round</button>
+      </section>
+
+      <section id="pudding-screen" class="screen">
+        <div class="card compact-card">
+          <div>
+            <p class="eyebrow">Dessert Time</p>
+            <h2>Final pudding count</h2>
+          </div>
+          <div class="mascot small" aria-hidden="true">🍮</div>
+        </div>
+
+        <div id="pudding-forms" class="round-forms"></div>
+        <button id="score-pudding" class="button primary full-width" type="button">Score Puddings</button>
+      </section>
+
+      <section id="final-screen" class="screen">
+        <div class="card final-card">
+          <p class="eyebrow">Final Scores</p>
+          <h2 id="winner-title">Winner</h2>
+          <p id="winner-subtitle"></p>
+        </div>
+
+        <div id="final-standings" class="standings-list"></div>
+        <div id="pudding-breakdown" class="breakdown card"></div>
+        <button id="play-again" class="button primary full-width" type="button">Play Again</button>
+      </section>
+    </main>
+  </div>
+
+  <template id="counter-template">
+    <div class="counter-row">
+      <div>
+        <label class="counter-label"></label>
+        <p class="counter-help"></p>
+      </div>
+      <div class="counter-controls">
+        <button class="counter-btn minus" type="button" aria-label="Decrease">−</button>
+        <output class="counter-value">0</output>
+        <button class="counter-btn plus" type="button" aria-label="Increase">+</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
